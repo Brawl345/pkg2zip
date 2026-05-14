@@ -5,7 +5,11 @@ else
   EXE :=
 endif
 
-BIN=pkg2zip${EXE}
+DESTDIR =
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+
+BIN = pkg2zip${EXE}
 
 # Detect architecture
 UNAME_M := $(shell uname -m 2>/dev/null || echo unknown)
@@ -20,15 +24,27 @@ else
 SRC := $(BASE_SRC)
 endif
 
-OBJ=${SRC:.c=.o}
-DEP=${SRC:.c=.d}
+OBJ = ${SRC:.c=.o}
+DEP = ${SRC:.c=.d}
 
-CFLAGS=-std=c99 -pipe -fvisibility=hidden -Wall -Wextra -Werror -DNDEBUG -D_GNU_SOURCE -O2
-LDFLAGS=-s
+CFLAGS = -std=c99 -pipe -fvisibility=hidden -Wall -Wextra -Werror -DNDEBUG -D_GNU_SOURCE -O2
+${BIN}: LDFLAGS += -s
+debug: CFLAGS += -g
+debug: LDFLAGS += -g
 
-.PHONY: all clean
+.PHONY: all clean install uninstall debug
 
 all: ${BIN}
+
+install:
+	install -D -m 0755 ${BIN} $(DESTDIR)$(BINDIR)/${BIN}
+	install -D -m 0755 rif2zrif.py $(DESTDIR)$(BINDIR)/rif2zrif
+	install -D -m 0755 zrif2rif.py $(DESTDIR)$(BINDIR)/zrif2rif
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/${BIN}
+	rm -f $(DESTDIR)$(BINDIR)/rif2zrif
+	rm -f $(DESTDIR)$(BINDIR)/zrif2rif
 
 clean:
 	@${RM} ${BIN} ${OBJ} ${DEP}
@@ -36,6 +52,10 @@ clean:
 ${BIN}: ${OBJ}
 	@echo [L] $@
 	@${CC} ${LDFLAGS} -o $@ $^
+
+debug: ${OBJ}
+	@echo [L] ${BIN}
+	@${CC} ${LDFLAGS} -o ${BIN} $^
 
 # x86-specific compilation rules (only on x86/x86_64)
 ifneq ($(filter i386 i686 x86_64,$(UNAME_M)),)

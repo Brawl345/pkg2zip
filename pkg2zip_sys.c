@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #if defined(_WIN32)
 
@@ -342,4 +344,19 @@ void sys_output_progress(uint64_t progress)
         sys_output("[*] unpacking... %u%%\r", now);
         out_next = now + 1;
     }
+}
+
+int sys_test_dir(const char* const path)
+{
+    struct stat info;
+
+    int statRC = stat(path, &info);
+    if (statRC != 0)
+    {
+        if (errno == ENOENT)  { return 0; }
+        if (errno == ENOTDIR) { return 0; }
+        return -1;
+    }
+
+    return (info.st_mode & S_IFDIR) ? 1 : 0;
 }
